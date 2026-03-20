@@ -29,12 +29,58 @@ const cardVariants = {
 };
 
 const features = [
-  { icon: <Cpu size={20} />, title: 'OT Patch Intelligence', body: 'OEM qualification tracking, configurable priority scoring (Threat Intel × Business Impact × Process Impact × Patch Level × Exposure), multi-step approval workflows, and installation tracking — not just patch distribution.', tag: 'Patch Management', wide: true },
-  { icon: <ShieldCheck size={20} />, title: 'OEM-Qualified Patches', body: 'Every patch validated by the original equipment manufacturer before deployment. Knowledge Base Verification captures vendor, product, version, OS compatibility, and evidence for every qualified patch.', tag: 'Patch Intelligence' },
-  { icon: <Activity size={20} />, title: 'Risk Governance', body: 'Editable 5×5 risk matrix, formal treatment strategies (Avoid / Accept / Transfer / Mitigate), named ownership, multi-step approval routing, and kanban-style action tracking — calibrated to your organization\'s risk appetite.', tag: 'Risk Management' },
-  { icon: <BookOpenCheck size={20} />, title: 'Full Audit Trail', body: 'Every patch, every approval, every exception — automatically logged. Compliance evidence generated as a byproduct of normal operations. Demonstrate IEC 62443, NIS2, and Act 854 compliance in minutes, not weeks.', tag: 'Compliance Reporting' },
-  { icon: <MapPinned size={20} />, title: 'Location-Aware Asset Modeling', body: 'CAD-style floor plan editor with IEC 62443 zone and conduit designations, rack diagrams, and dependency maps. Know the building, floor, rack, and safety zone — not just the IP address.', tag: 'Physical Context' },
-  { icon: <Radar size={20} />, title: 'Threat Intelligence', body: 'Real-time OT-specific threat feeds mapped to your asset inventory. Know which CVEs are actively exploited in industrial environments — and which of your assets are exposed.', tag: 'Threat Detection' },
+  {
+    icon: <Cpu size={20} />,
+    iconColor: 'icon-cyan',
+    title: 'OT Patch Intelligence',
+    body: 'OEM qualification tracking, configurable priority scoring (Threat Intel × Business Impact × Process Impact × Patch Level × Exposure), multi-step approval workflows, and installation tracking — not just patch distribution.',
+    tag: 'Patch Management',
+    tagColor: 'tag-cyan',
+    metric: '300+ OEM product qualifications tracked',
+    wide: true,
+  },
+  {
+    icon: <ShieldCheck size={20} />,
+    iconColor: 'icon-cyan',
+    title: 'OEM-Qualified Patches',
+    body: 'Every patch validated by the original equipment manufacturer before deployment. Knowledge Base Verification captures vendor, product, version, OS compatibility, and evidence for every qualified patch.',
+    tag: 'Patch Intelligence',
+    tagColor: 'tag-cyan',
+  },
+  {
+    icon: <Activity size={20} />,
+    iconColor: 'icon-amber',
+    title: 'Risk Governance',
+    body: 'Editable 5×5 risk matrix, formal treatment strategies (Avoid / Accept / Transfer / Mitigate), named ownership, multi-step approval routing, and kanban-style action tracking — calibrated to your organization\'s risk appetite.',
+    tag: 'Risk Management',
+    tagColor: 'tag-amber',
+    metric: 'Formal owner assigned per risk item',
+  },
+  {
+    icon: <BookOpenCheck size={20} />,
+    iconColor: 'icon-green',
+    title: 'Full Audit Trail',
+    body: 'Every patch, every approval, every exception — automatically logged. Compliance evidence generated as a byproduct of normal operations. Demonstrate IEC 62443, NIS2, and Act 854 compliance in minutes, not weeks.',
+    tag: 'Compliance Reporting',
+    tagColor: 'tag-green',
+  },
+  {
+    icon: <MapPinned size={20} />,
+    iconColor: 'icon-teal',
+    title: 'Location-Aware Asset Modeling',
+    body: 'CAD-style floor plan editor with IEC 62443 zone and conduit designations, rack diagrams, and dependency maps. Know the building, floor, rack, and safety zone — not just the IP address.',
+    tag: 'Physical Context',
+    tagColor: 'tag-teal',
+    metric: 'Building → Floor → Rack → Zone hierarchy',
+  },
+  {
+    icon: <Radar size={20} />,
+    iconColor: 'icon-red',
+    title: 'Threat Intelligence',
+    body: 'Real-time OT-specific threat feeds mapped to your asset inventory. Know which CVEs are actively exploited in industrial environments — and which of your assets are exposed.',
+    tag: 'Threat Detection',
+    tagColor: 'tag-red',
+  },
 ];
 
 export default function Features() {
@@ -86,10 +132,25 @@ export default function Features() {
             whileInView="visible"
             viewport={{ once: true, amount: 0.15 }}
           >
-            <div className="feature-card-icon">{f.icon}</div>
-            <div className="feature-card-title">{f.title}</div>
-            <div className="feature-card-body">{f.body}</div>
-            <div className="feature-card-tag">{f.tag}</div>
+            {f.wide ? (
+              <div className="feature-card-inner">
+                <div className={`feature-card-icon ${f.iconColor}`}>{f.icon}</div>
+                <div>
+                  <div className="feature-card-title">{f.title}</div>
+                  <div className="feature-card-body">{f.body}</div>
+                  {f.metric && <div className="feature-card-metric">{f.metric}</div>}
+                  <div className={`feature-card-tag ${f.tagColor}`}>{f.tag}</div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className={`feature-card-icon ${f.iconColor}`}>{f.icon}</div>
+                <div className="feature-card-title">{f.title}</div>
+                <div className="feature-card-body">{f.body}</div>
+                {f.metric && <div className="feature-card-metric">{f.metric}</div>}
+                <div className={`feature-card-tag ${f.tagColor}`}>{f.tag}</div>
+              </>
+            )}
           </motion.div>
         ))}
       </div>

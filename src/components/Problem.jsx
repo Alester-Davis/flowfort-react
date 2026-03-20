@@ -32,18 +32,21 @@ const problems = [
   {
     icon: <ShieldX size={16} />,
     colorClass: 'red',
+    severity: 'Critical Gap',
     title: 'The Patch Governance Gap',
     body: 'OEM qualification is required before any OT patch deploys — a process that can take months. Detection tools flag missing patches but cannot manage the qualification, approval, scheduling, and documentation to deploy them safely.',
   },
   {
     icon: <Users size={16} />,
     colorClass: 'orange',
+    severity: 'Governance Gap',
     title: 'The Risk Ownership Gap',
     body: 'Detection dashboards show risk scores but provide no formal risk register, named owners, or documented treatment decisions. When the board asks "What is our OT risk posture?" — the answer is a spreadsheet.',
   },
   {
     icon: <MapPin size={16} />,
     colorClass: 'muted',
+    severity: 'Operational Gap',
     title: 'The Physical Context Gap',
     body: 'Network topology maps show logical relationships — IP addresses and protocols. They don\'t show which building, floor, rack, or safety zone an asset is in. During an incident, you need a physical address — not a subnet.',
   },
@@ -90,7 +93,7 @@ export default function Problem() {
       <div className="problem-right">
         {problems.map((p, i) => (
           <motion.div
-            className="problem-card"
+            className={`problem-card severity-${p.colorClass}`}
             key={i}
             custom={i}
             variants={cardVariants}
@@ -100,6 +103,7 @@ export default function Problem() {
           >
             <div className={`problem-icon ${p.colorClass}`}>{p.icon}</div>
             <div>
+              <div className={`problem-card-severity ${p.colorClass}`}>{p.severity}</div>
               <div className="problem-card-title">{p.title}</div>
               <div className="problem-card-body">{p.body}</div>
             </div>

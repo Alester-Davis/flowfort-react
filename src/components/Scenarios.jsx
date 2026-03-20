@@ -109,16 +109,23 @@ export default function Scenarios() {
             whileInView="visible"
             viewport={{ once: true, amount: 0.15 }}
           >
+            <div className="scenario-bg-number">{s.number}</div>
             <div className="scenario-number">{s.number}</div>
             <div className="scenario-title">{s.title}</div>
             <div className="scenario-context">{s.context}</div>
-            <div className="scenario-row without">
-              <XCircle size={13} className="scenario-icon-bad" />
-              <span><strong>Without FlowFort:</strong> {s.without}</span>
+            <div className="scenario-outcome-block without">
+              <div className="scenario-outcome-label without">
+                <XCircle size={11} />
+                Without FlowFort
+              </div>
+              <div className="scenario-outcome-body">{s.without}</div>
             </div>
-            <div className="scenario-row with">
-              <CheckCircle2 size={13} className="scenario-icon-good" />
-              <span><strong>With FlowFort:</strong> {s.with}</span>
+            <div className="scenario-outcome-block with">
+              <div className="scenario-outcome-label with">
+                <CheckCircle2 size={11} />
+                With FlowFort
+              </div>
+              <div className="scenario-outcome-body">{s.with}</div>
             </div>
           </motion.div>
         ))}
