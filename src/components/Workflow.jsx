@@ -52,107 +52,162 @@ function rr(ctx, x, y, w, h, r) {
 /* ══════════════════════════════════════════════════════════
    PHASE 0  —  Asset Discovery
    ══════════════════════════════════════════════════════════ */
-const DISC_NODES = (() => {
-  const nodes = [];
-  const cols = 7, rows = 5;
-  for (let r = 0; r < rows; r++)
-    for (let c = 0; c < cols; c++)
-      nodes.push({
-        x: 55 + c * 60, y: 52 + r * 64,
-        spawnP: (r * cols + c) / (cols * rows - 1),
-        pulse: (r * cols + c) * 0.4,
-        type: (r * cols + c) % 3 === 0 ? 'hmi' : 'plc',
-      });
-  return nodes;
-})();
-
-const DISC_LINES = (() => {
-  const lines = [];
-  for (let i = 0; i < DISC_NODES.length; i++)
-    for (let j = i + 1; j < DISC_NODES.length; j++) {
-      const dx = DISC_NODES[i].x - DISC_NODES[j].x;
-      const dy = DISC_NODES[i].y - DISC_NODES[j].y;
-      if (Math.sqrt(dx * dx + dy * dy) < 88)
-        lines.push({ i, j, spawnP: Math.max(DISC_NODES[i].spawnP, DISC_NODES[j].spawnP) + 0.02 });
-    }
-  return lines;
-})();
+// Layered ring topology — Y values capped so labels fit above badge area (H-58)
+// Badge area: y=362..420. Bottom device nodes max y=295 → label ends at ~315, clear.
+const DISC_CORE   = { x: 240, y: 175, label: 'CORE-SW' };
+const DISC_ZONES  = [
+  { x: 120, y: 95,  label: 'ZONE-A' },
+  { x: 360, y: 95,  label: 'ZONE-B' },
+  { x: 85,  y: 260, label: 'ZONE-C' },
+  { x: 385, y: 260, label: 'ZONE-D' },
+];
+const DISC_DEVICES = [
+  { x: 52,  y: 44,  label: 'PLC-01',  type: 'plc',    zone: 0, spawnP: 0.30 },
+  { x: 145, y: 30,  label: 'HMI-01',  type: 'hmi',    zone: 0, spawnP: 0.35 },
+  { x: 76,  y: 148, label: 'RTU-01',  type: 'rtu',    zone: 0, spawnP: 0.38 },
+  { x: 340, y: 30,  label: 'PLC-02',  type: 'plc',    zone: 1, spawnP: 0.43 },
+  { x: 432, y: 44,  label: 'HMI-02',  type: 'hmi',    zone: 1, spawnP: 0.47 },
+  { x: 400, y: 148, label: 'SCADA',   type: 'scada',  zone: 1, spawnP: 0.51 },
+  { x: 38,  y: 295, label: 'RTU-02',  type: 'rtu',    zone: 2, spawnP: 0.56 },
+  { x: 140, y: 310, label: 'SENSOR',  type: 'sensor', zone: 2, spawnP: 0.60 },
+  { x: 395, y: 295, label: 'RTU-03',  type: 'rtu',    zone: 3, spawnP: 0.65 },
+  { x: 440, y: 210, label: 'ENG-WS',  type: 'hmi',    zone: 3, spawnP: 0.70 },
+];
+const TYPE_COLOR = { plc: '#0fd4c4', hmi: '#5a6fe8', rtu: '#f0a030', scada: '#e05c5c', sensor: '#b06dd0' };
 
 function drawDiscovery(ctx, W, H, p, t) {
   ctx.clearRect(0, 0, W, H);
-  const beamX = (p * (W + 80) - 40);
-  const g = ctx.createLinearGradient(beamX - 40, 0, beamX + 40, 0);
-  g.addColorStop(0, 'transparent');
-  g.addColorStop(0.5, 'rgba(15,212,196,0.07)');
-  g.addColorStop(1, 'transparent');
-  ctx.fillStyle = g;
+
+  // Scanning beam — sweeps left to right
+  const beamX = lerp(-60, W + 60, p);
+  const beamG = ctx.createLinearGradient(beamX - 55, 0, beamX + 55, 0);
+  beamG.addColorStop(0,   'transparent');
+  beamG.addColorStop(0.45,'rgba(15,212,196,0.04)');
+  beamG.addColorStop(0.5, 'rgba(15,212,196,0.13)');
+  beamG.addColorStop(0.55,'rgba(15,212,196,0.04)');
+  beamG.addColorStop(1,   'transparent');
+  ctx.fillStyle = beamG;
   ctx.fillRect(0, 0, W, H);
 
-  DISC_LINES.forEach(l => {
-    const lp = band(p, l.spawnP, l.spawnP + 0.06);
+  // Connections: core ↔ zones
+  const coreSpawn = band(p, 0.04, 0.14);
+  DISC_ZONES.forEach((z, zi) => {
+    const lp = band(p, 0.04 + zi * 0.03, 0.22 + zi * 0.03);
     if (lp <= 0) return;
-    const n1 = DISC_NODES[l.i], n2 = DISC_NODES[l.j];
     ctx.beginPath();
-    ctx.moveTo(n1.x, n1.y);
-    ctx.lineTo(lerp(n1.x, n2.x, lp), lerp(n1.y, n2.y, lp));
-    ctx.strokeStyle = `rgba(15,212,196,${lp * 0.18})`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    ctx.moveTo(DISC_CORE.x, DISC_CORE.y);
+    ctx.lineTo(lerp(DISC_CORE.x, z.x, lp), lerp(DISC_CORE.y, z.y, lp));
+    ctx.strokeStyle = `rgba(15,212,196,${lp * 0.55})`;
+    ctx.lineWidth = 1.5; ctx.stroke();
   });
 
-  DISC_NODES.forEach(n => {
-    const np = band(p, n.spawnP, n.spawnP + 0.04);
+  // Connections: zones ↔ devices
+  DISC_DEVICES.forEach(d => {
+    const zone = DISC_ZONES[d.zone];
+    const lp = band(p, d.spawnP - 0.06, d.spawnP);
+    if (lp <= 0) return;
+    ctx.beginPath();
+    ctx.moveTo(zone.x, zone.y);
+    ctx.lineTo(lerp(zone.x, d.x, lp), lerp(zone.y, d.y, lp));
+    ctx.strokeStyle = `rgba(${TYPE_COLOR[d.type].slice(1).match(/../g).map(h => parseInt(h, 16)).join(',')},${lp * 0.5})`;
+    ctx.lineWidth = 1; ctx.stroke();
+  });
+
+  // Core switch node (radius 18)
+  if (coreSpawn > 0) {
+    ctx.shadowColor = '#0fd4c4'; ctx.shadowBlur = 20 * coreSpawn;
+    ctx.beginPath(); ctx.arc(DISC_CORE.x, DISC_CORE.y, 18, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(15,212,196,${coreSpawn * 0.18})`; ctx.fill();
+    ctx.strokeStyle = '#0fd4c4'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.shadowBlur = 0;
+    // Label centered inside node
+    ctx.fillStyle = '#0fd4c4'; ctx.font = 'bold 8px JetBrains Mono, monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('CORE', DISC_CORE.x, DISC_CORE.y);
+    ctx.textBaseline = 'alphabetic';
+    // Name below node — 18 radius + 12 gap
+    ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.font = '8px JetBrains Mono, monospace';
+    ctx.fillText('CORE-SW', DISC_CORE.x, DISC_CORE.y + 30);
+    // Ping ring
+    const ping = (t * 0.0018) % 1;
+    ctx.beginPath(); ctx.arc(DISC_CORE.x, DISC_CORE.y, 18 + ping * 26, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(15,212,196,${(1 - ping) * 0.35 * coreSpawn})`; ctx.lineWidth = 1; ctx.stroke();
+  }
+
+  // Zone switch nodes (radius 13)
+  DISC_ZONES.forEach((z, zi) => {
+    const zp = band(p, 0.06 + zi * 0.03, 0.20 + zi * 0.03);
+    if (zp <= 0) return;
+    ctx.shadowColor = '#0fd4c4'; ctx.shadowBlur = 10 * zp;
+    ctx.beginPath(); ctx.arc(z.x, z.y, 13, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(15,212,196,${zp * 0.14})`; ctx.fill();
+    ctx.strokeStyle = `rgba(15,212,196,${zp * 0.9})`; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = `rgba(255,255,255,${zp * 0.88})`;
+    ctx.font = 'bold 7px JetBrains Mono, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(z.label, z.x, z.y);
+    ctx.textBaseline = 'alphabetic';
+  });
+
+  // Device nodes (radius 11) — label 13px below edge
+  const NODE_R = 11;
+  DISC_DEVICES.forEach(d => {
+    const np = band(p, d.spawnP, d.spawnP + 0.05);
     if (np <= 0) return;
-    const pulse = (Math.sin(t * 0.0015 + n.pulse) * 0.25 + 0.75) * np;
-    ctx.globalAlpha = pulse;
-    ctx.beginPath();
-    ctx.arc(n.x, n.y, 8, 0, Math.PI * 2);
-    ctx.strokeStyle = '#0fd4c4';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(15,212,196,0.1)';
-    rr(ctx, n.x - 4.5, n.y - 4.5, 9, 9, 2);
-    ctx.fill();
-    ctx.strokeStyle = n.type === 'plc' ? '#0fd4c4' : '#5a6fe8';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.globalAlpha = np * 0.45;
-    ctx.fillStyle = '#0fd4c4';
-    ctx.font = '5.5px JetBrains Mono, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(n.type.toUpperCase(), n.x, n.y + 18);
+    const color = TYPE_COLOR[d.type];
+    const pulse = 0.75 + Math.sin(t * 0.002 + d.spawnP * 8) * 0.25;
+    ctx.globalAlpha = np;
+    ctx.shadowColor = color; ctx.shadowBlur = 14 * np * pulse;
+    ctx.beginPath(); ctx.arc(d.x, d.y, NODE_R, 0, Math.PI * 2);
+    ctx.fillStyle = color + '28'; ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 1.8; ctx.stroke();
+    ctx.shadowBlur = 0;
+    // Type abbreviation inside node
+    ctx.fillStyle = color; ctx.font = 'bold 7px JetBrains Mono, monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(d.type.slice(0, 3).toUpperCase(), d.x, d.y);
+    ctx.textBaseline = 'alphabetic';
+    // Device label — 13px below node edge, 9px font
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.font = '9px JetBrains Mono, monospace';
+    ctx.fillText(d.label, d.x, d.y + NODE_R + 13);
+    ctx.globalAlpha = 1;
   });
-  ctx.globalAlpha = 1;
 
-  const discovered = DISC_NODES.filter(n => p >= n.spawnP).length;
-  ctx.fillStyle = 'rgba(8,9,16,0.88)';
-  rr(ctx, W / 2 - 62, H - 52, 124, 36, 8);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(15,212,196,0.22)';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-  ctx.fillStyle = '#0fd4c4';
-  ctx.font = 'bold 17px Space Grotesk, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(discovered, W / 2, H - 32);
-  ctx.fillStyle = 'rgba(255,255,255,0.3)';
-  ctx.font = '7.5px JetBrains Mono, monospace';
-  ctx.fillText('ASSETS DISCOVERED', W / 2, H - 20);
+  // Counter badge — fixed at bottom, vertically spaced
+  const discovered = DISC_DEVICES.filter(d => p >= d.spawnP).length
+    + DISC_ZONES.filter((_, zi) => band(p, 0.06 + zi * 0.03, 0.20 + zi * 0.03) > 0).length
+    + (coreSpawn > 0 ? 1 : 0);
+  const badgeW = 160, badgeH = 44;
+  const bx = (W - badgeW) / 2, by = H - badgeH - 8;
+  ctx.fillStyle = 'rgba(8,9,16,0.92)';
+  rr(ctx, bx, by, badgeW, badgeH, 8); ctx.fill();
+  ctx.strokeStyle = 'rgba(15,212,196,0.4)'; ctx.lineWidth = 1; ctx.stroke();
+  // Number
+  ctx.shadowColor = '#0fd4c4'; ctx.shadowBlur = 12;
+  ctx.fillStyle = '#0fd4c4'; ctx.font = 'bold 22px Space Grotesk, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(discovered, W / 2, by + 18);
+  ctx.shadowBlur = 0; ctx.textBaseline = 'alphabetic';
+  // Sub-label
+  ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = '7px JetBrains Mono, monospace';
+  ctx.fillText('ASSETS DISCOVERED', W / 2, by + 37);
 }
 
 /* ══════════════════════════════════════════════════════════
    PHASE 1  —  Risk Assessment
    ══════════════════════════════════════════════════════════ */
+// Node Y layout: badge area starts at H-58=362. Bottom nodes need y + NODE_R + label(13) + CVE(16) < 362
+// So bottom nodes max y = 362 - 14 - 13 - 16 = 319. Use y=295 for bottom row, y=200 for mid row.
 const RISK_NODES = [
-  { x: 240, y: 55,  risk: 0.95, label: 'PLC-MAIN',  cve: 'CVE-2024-1337' },
-  { x: 95,  y: 145, risk: 0.72, label: 'HMI-01',    cve: 'CVE-2024-8821' },
-  { x: 385, y: 145, risk: 0.88, label: 'SCADA-SRV', cve: 'CVE-2023-4991' },
-  { x: 55,  y: 260, risk: 0.35, label: 'SENSOR-12', cve: null },
-  { x: 175, y: 270, risk: 0.61, label: 'RTU-03',    cve: 'CVE-2024-5512' },
-  { x: 305, y: 270, risk: 0.44, label: 'RTU-07',    cve: null },
-  { x: 425, y: 255, risk: 0.79, label: 'HIST-SRV',  cve: 'CVE-2023-9902' },
-  { x: 145, y: 358, risk: 0.22, label: 'ENG-WS',    cve: null },
-  { x: 340, y: 358, risk: 0.55, label: 'DMZ-FW',    cve: 'CVE-2024-3301' },
+  { x: 240, y: 46,  risk: 0.95, label: 'PLC-MAIN',  cve: 'CVE-2024-1337' },
+  { x: 100, y: 128, risk: 0.72, label: 'HMI-01',    cve: 'CVE-2024-8821' },
+  { x: 380, y: 128, risk: 0.88, label: 'SCADA-SRV', cve: 'CVE-2023-4991' },
+  { x: 52,  y: 222, risk: 0.35, label: 'SENSOR-12', cve: null },
+  { x: 178, y: 232, risk: 0.61, label: 'RTU-03',    cve: 'CVE-2024-5512' },
+  { x: 305, y: 232, risk: 0.44, label: 'RTU-07',    cve: null },
+  { x: 428, y: 215, risk: 0.79, label: 'HIST-SRV',  cve: 'CVE-2023-9902' },
+  { x: 145, y: 295, risk: 0.22, label: 'ENG-WS',    cve: null },
+  { x: 338, y: 295, risk: 0.55, label: 'DMZ-FW',    cve: 'CVE-2024-3301' },
 ];
 const RISK_EDGES = [[0,1],[0,2],[1,3],[1,4],[2,6],[2,5],[3,7],[4,7],[5,8],[6,8]];
 
@@ -162,283 +217,455 @@ function riskColor(r) {
 
 function drawRisk(ctx, W, H, p, t) {
   ctx.clearRect(0, 0, W, H);
+  const NODE_R = 14;
+
+  // Edges
   RISK_EDGES.forEach(([i, j]) => {
-    const np = Math.min(band(p, i / RISK_NODES.length, (i + 1) / RISK_NODES.length + 0.1),
-                        band(p, j / RISK_NODES.length, (j + 1) / RISK_NODES.length + 0.1));
+    const np = Math.min(
+      band(p, i / RISK_NODES.length, (i + 1) / RISK_NODES.length + 0.1),
+      band(p, j / RISK_NODES.length, (j + 1) / RISK_NODES.length + 0.1),
+    );
     if (np <= 0) return;
     const a = RISK_NODES[i], b = RISK_NODES[j];
     const rMax = Math.max(a.risk, b.risk);
+    const col = rMax > 0.75 ? `224,92,92` : rMax > 0.5 ? `240,160,48` : `62,201,167`;
     ctx.beginPath();
     ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
-    ctx.strokeStyle = rMax > 0.75 ? `rgba(224,92,92,${np * 0.25})`
-                    : rMax > 0.5  ? `rgba(240,160,48,${np * 0.25})`
-                    :                `rgba(62,201,167,${np * 0.2})`;
-    ctx.lineWidth = rMax > 0.75 ? 1.5 : 1;
-    ctx.stroke();
+    ctx.strokeStyle = `rgba(${col},${np * 0.45})`;
+    ctx.lineWidth = rMax > 0.75 ? 1.8 : 1.2; ctx.stroke();
   });
 
+  // Nodes
   RISK_NODES.forEach((n, i) => {
-    const np = band(p, i / RISK_NODES.length, i / RISK_NODES.length + 0.12);
+    const np = band(p, i / RISK_NODES.length, i / RISK_NODES.length + 0.1);
     if (np <= 0) return;
     const color = riskColor(n.risk);
+
+    // Pulse ring for high-risk
     if (n.risk > 0.75) {
-      const pR = lerp(12, 16, (Math.sin(t * 0.003 + i) + 1) / 2);
+      const ring = ((t * 0.0022 + i * 0.4) % 1);
       ctx.beginPath();
-      ctx.arc(n.x, n.y, pR, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(224,92,92,${np * 0.2})`;
-      ctx.lineWidth = 1;
-      ctx.stroke();
+      ctx.arc(n.x, n.y, NODE_R + 4 + ring * 18, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(224,92,92,${(1 - ring) * 0.6 * np})`;
+      ctx.lineWidth = 1.5; ctx.stroke();
     }
+
+    // Node fill + stroke
     ctx.globalAlpha = np;
-    ctx.beginPath();
-    ctx.arc(n.x, n.y, 10, 0, Math.PI * 2);
-    ctx.fillStyle = color + '22'; ctx.fill();
-    ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.shadowColor = color; ctx.shadowBlur = 18 * np;
+    ctx.beginPath(); ctx.arc(n.x, n.y, NODE_R, 0, Math.PI * 2);
+    ctx.fillStyle = color + '2a'; ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Risk score — centered inside node
     ctx.fillStyle = color;
-    ctx.font = 'bold 7.5px Space Grotesk, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(Math.round(n.risk * 100), n.x, n.y + 3);
-    ctx.globalAlpha = np * 0.65;
-    ctx.fillStyle = '#f5f5f7';
-    ctx.font = '7px JetBrains Mono, monospace';
-    ctx.fillText(n.label, n.x, n.y + 22);
+    ctx.font = 'bold 10px Space Grotesk, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(Math.round(n.risk * 100), n.x, n.y);
+    ctx.textBaseline = 'alphabetic';
+
+    // Device label — 13px below node edge, 9px font
+    ctx.globalAlpha = np * 0.9;
+    ctx.fillStyle = '#f0f0f2';
+    ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+    ctx.fillText(n.label, n.x, n.y + NODE_R + 13);
+
+    // CVE badge — 16px below label baseline (label at +13, badge top at +16 → no overlap)
     if (n.cve && np > 0.6) {
-      const bx = n.x - 28, by = n.y + 26;
-      ctx.globalAlpha = np * (np - 0.6) / 0.4;
-      ctx.fillStyle = 'rgba(224,92,92,0.12)';
-      rr(ctx, bx, by, 56, 11, 2);
-      ctx.fill();
-      ctx.fillStyle = '#e05c5c';
-      ctx.font = '5.5px JetBrains Mono, monospace';
-      ctx.fillText(n.cve, n.x, by + 8);
+      const fa = Math.min(1, (np - 0.6) / 0.4);
+      const badgeW = 70, badgeH = 13;
+      const bx = n.x - badgeW / 2;
+      const by = n.y + NODE_R + 16;   // starts just below the label's 9px ascenders
+      ctx.globalAlpha = np * fa * 0.95;
+      ctx.fillStyle = 'rgba(224,92,92,0.2)';
+      rr(ctx, bx, by, badgeW, badgeH, 3); ctx.fill();
+      ctx.strokeStyle = 'rgba(224,92,92,0.6)'; ctx.lineWidth = 0.8; ctx.stroke();
+      ctx.fillStyle = '#ff7070';
+      ctx.font = 'bold 7px JetBrains Mono, monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(n.cve, n.x, by + badgeH / 2);
+      ctx.textBaseline = 'alphabetic';
     }
     ctx.globalAlpha = 1;
   });
 
-  const px = W / 2 - 112, py = H - 58;
-  ctx.fillStyle = 'rgba(8,9,16,0.9)';
-  rr(ctx, px, py, 224, 46, 8);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(240,160,48,0.25)';
-  ctx.lineWidth = 1; ctx.stroke();
-  const vis = RISK_NODES.filter((_, i) => band(p, i / RISK_NODES.length, i / RISK_NODES.length + 0.12) > 0.5);
+  // Summary badge — 3 equal columns, fixed height
+  const badgeW = 252, badgeH = 46;
+  const px = (W - badgeW) / 2, py = H - badgeH - 8;
+  ctx.fillStyle = 'rgba(8,9,16,0.92)';
+  rr(ctx, px, py, badgeW, badgeH, 8); ctx.fill();
+  ctx.strokeStyle = 'rgba(240,160,48,0.35)'; ctx.lineWidth = 1; ctx.stroke();
+
+  // Vertical dividers
+  [px + 84, px + 168].forEach(lx => {
+    ctx.beginPath(); ctx.moveTo(lx, py + 8); ctx.lineTo(lx, py + badgeH - 8);
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1; ctx.stroke();
+  });
+
+  const vis  = RISK_NODES.filter((_, i) => band(p, i / RISK_NODES.length, i / RISK_NODES.length + 0.1) > 0.5);
   const high = vis.filter(n => n.risk > 0.75).length;
   const med  = vis.filter(n => n.risk > 0.5 && n.risk <= 0.75).length;
   const low  = vis.filter(n => n.risk <= 0.5).length;
-  [[high,'#e05c5c','HIGH', px+26],[med,'#f0a030','MED', px+98],[low,'#3ec9a7','LOW', px+170]].forEach(([v,c,l,x]) => {
-    ctx.fillStyle = c;
-    ctx.font = 'bold 15px Space Grotesk, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(v, x, py + 24);
-    ctx.fillStyle = 'rgba(255,255,255,0.28)';
-    ctx.font = '7px JetBrains Mono, monospace';
-    ctx.fillText(l, x, py + 38);
+  [[high, '#e05c5c', 'CRITICAL', px + 42],
+   [med,  '#f0a030', 'MEDIUM',   px + 126],
+   [low,  '#3ec9a7', 'LOW',      px + 210]].forEach(([v, c, l, x]) => {
+    ctx.shadowColor = c; ctx.shadowBlur = 8;
+    ctx.fillStyle = c; ctx.font = 'bold 20px Space Grotesk, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(v, x, py + 18);
+    ctx.shadowBlur = 0; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = '8px JetBrains Mono, monospace';
+    ctx.fillText(l, x, py + 39);
   });
 }
 
 /* ══════════════════════════════════════════════════════════
    PHASE 2  —  Patch Orchestration
    ══════════════════════════════════════════════════════════ */
+// Badge area H-56=364. Bottom nodes need y + 13(radius) + 13(label) < 364 → max y ≈ 338
 const PATCH_TARGETS = [
-  { x: 80,  y: 160, label: 'PLC-MAIN',  delay: 0.05 },
-  { x: 200, y: 180, label: 'HMI-01',    delay: 0.18 },
-  { x: 355, y: 155, label: 'SCADA-SRV', delay: 0.31 },
-  { x: 55,  y: 290, label: 'RTU-03',    delay: 0.44 },
-  { x: 175, y: 300, label: 'SENSOR-12', delay: 0.55 },
-  { x: 310, y: 295, label: 'HIST-SRV',  delay: 0.66 },
-  { x: 405, y: 278, label: 'ENG-WS',    delay: 0.77 },
+  { x: 72,  y: 140, label: 'PLC-MAIN',  delay: 0.04 },
+  { x: 200, y: 158, label: 'HMI-01',    delay: 0.17 },
+  { x: 360, y: 140, label: 'SCADA-SRV', delay: 0.30 },
+  { x: 44,  y: 258, label: 'RTU-03',    delay: 0.43 },
+  { x: 175, y: 268, label: 'SENSOR-12', delay: 0.54 },
+  { x: 318, y: 265, label: 'HIST-SRV',  delay: 0.65 },
+  { x: 420, y: 248, label: 'ENG-WS',    delay: 0.76 },
 ];
-const PATCH_SERVER = { x: 240, y: 52 };
+const PATCH_SERVER = { x: 240, y: 46 };
 
 function drawPatch(ctx, W, H, p) {
   ctx.clearRect(0, 0, W, H);
   const total = PATCH_TARGETS.length;
-  PATCH_TARGETS.forEach((node) => {
-    const lineP = band(p, 0, node.delay + 0.05);
-    const pktP  = band(p, node.delay, node.delay + 0.14);
-    const done  = p >= node.delay + 0.14;
-    const color = done ? '#3ec9a7' : pktP > 0 ? '#5a6fe8' : 'rgba(255,255,255,0.15)';
+
+  PATCH_TARGETS.forEach(node => {
+    const lineP = band(p, 0, node.delay + 0.06);
+    const pktP  = band(p, node.delay, node.delay + 0.13);
+    const done  = p >= node.delay + 0.13;
+    const nodeP = Math.min(1, lineP * 2.5);
+
+    // Deployment line
+    const lineColor = done ? 'rgba(62,201,167,0.45)' : pktP > 0 ? 'rgba(90,111,232,0.4)' : 'rgba(255,255,255,0.1)';
     ctx.beginPath();
     ctx.moveTo(PATCH_SERVER.x, PATCH_SERVER.y);
     ctx.lineTo(lerp(PATCH_SERVER.x, node.x, lineP), lerp(PATCH_SERVER.y, node.y, lineP));
-    ctx.strokeStyle = done ? 'rgba(62,201,167,0.2)' : pktP > 0 ? 'rgba(90,111,232,0.2)' : 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 5]);
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = done ? 1.2 : 1;
+    ctx.setLineDash(done ? [] : [5, 5]);
     ctx.stroke();
     ctx.setLineDash([]);
+
+    // Packet in-flight with trail
     if (pktP > 0 && !done) {
-      for (let trail = 4; trail >= 0; trail--) {
-        const tp = Math.max(0, pktP - trail * 0.025);
-        const tx = lerp(PATCH_SERVER.x, node.x, tp);
-        const ty = lerp(PATCH_SERVER.y, node.y, tp);
-        ctx.beginPath();
-        ctx.arc(tx, ty, 3.5 - trail * 0.5, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(90,111,232,${0.9 - trail * 0.17})`;
+      for (let trail = 5; trail >= 0; trail--) {
+        const tp  = Math.max(0, pktP - trail * 0.022);
+        const tx  = lerp(PATCH_SERVER.x, node.x, tp);
+        const ty  = lerp(PATCH_SERVER.y, node.y, tp);
+        const rad = Math.max(0.5, 4 - trail * 0.6);
+        ctx.shadowColor = '#5a6fe8'; ctx.shadowBlur = trail === 0 ? 16 : 0;
+        ctx.beginPath(); ctx.arc(tx, ty, rad, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(122,143,248,${(0.95 - trail * 0.15)})`;
         ctx.fill();
       }
-      ctx.shadowColor = '#5a6fe8'; ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.arc(lerp(PATCH_SERVER.x, node.x, pktP), lerp(PATCH_SERVER.y, node.y, pktP), 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#7a8ff8'; ctx.fill();
       ctx.shadowBlur = 0;
     }
-    const nodeP = Math.min(1, lineP * 3);
-    ctx.globalAlpha = nodeP;
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, 10, 0, Math.PI * 2);
-    ctx.fillStyle = color + '22'; ctx.fill();
-    ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // Done flash ring
     if (done) {
-      ctx.beginPath();
-      ctx.moveTo(node.x - 4, node.y); ctx.lineTo(node.x - 1, node.y + 3.5); ctx.lineTo(node.x + 5, node.y - 4);
-      ctx.strokeStyle = '#3ec9a7'; ctx.lineWidth = 1.8; ctx.stroke();
+      ctx.shadowColor = '#3ec9a7'; ctx.shadowBlur = 20;
+      ctx.beginPath(); ctx.arc(node.x, node.y, 20, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(62,201,167,0.25)'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.shadowBlur = 0;
     }
-    ctx.globalAlpha = nodeP * 0.55;
-    ctx.fillStyle = '#f5f5f7';
-    ctx.font = '6.5px JetBrains Mono, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(node.label, node.x, node.y + 22);
+
+    // Node circle
+    const color = done ? '#3ec9a7' : pktP > 0 ? '#7a8ff8' : 'rgba(255,255,255,0.2)';
+    ctx.shadowColor = done ? '#3ec9a7' : '#5a6fe8'; ctx.shadowBlur = done ? 16 : pktP > 0 ? 12 : 0;
+    ctx.globalAlpha = nodeP;
+    ctx.beginPath(); ctx.arc(node.x, node.y, 13, 0, Math.PI * 2);
+    ctx.fillStyle = done ? 'rgba(62,201,167,0.2)' : pktP > 0 ? 'rgba(90,111,232,0.2)' : 'rgba(255,255,255,0.06)';
+    ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Checkmark when done
+    if (done) {
+      ctx.strokeStyle = '#3ec9a7'; ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(node.x - 5, node.y + 0.5);
+      ctx.lineTo(node.x - 1.5, node.y + 4.5);
+      ctx.lineTo(node.x + 6, node.y - 5);
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+    }
+
+    ctx.globalAlpha = nodeP * 0.88;
+    ctx.fillStyle = done ? '#3ec9a7' : '#f0f0f2';
+    ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+    ctx.fillText(node.label, node.x, node.y + 13 + 13);  // radius 13 + 13px gap
     ctx.globalAlpha = 1;
   });
 
-  const sR = 15 + Math.sin(p * 30) * 2;
-  ctx.beginPath(); ctx.arc(PATCH_SERVER.x, PATCH_SERVER.y, sR + 6, 0, Math.PI * 2);
-  ctx.strokeStyle = 'rgba(90,111,232,0.15)'; ctx.lineWidth = 1; ctx.stroke();
-  ctx.beginPath(); ctx.arc(PATCH_SERVER.x, PATCH_SERVER.y, 16, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(90,111,232,0.15)'; ctx.fill();
-  ctx.strokeStyle = '#5a6fe8'; ctx.lineWidth = 1.5; ctx.stroke();
-  ctx.fillStyle = '#5a6fe8';
-  ctx.font = 'bold 8px Space Grotesk, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('PKG', PATCH_SERVER.x, PATCH_SERVER.y + 3);
-  ctx.fillStyle = 'rgba(255,255,255,0.4)';
-  ctx.font = '6.5px JetBrains Mono, monospace';
-  ctx.fillText('PATCH SERVER', PATCH_SERVER.x, PATCH_SERVER.y + 27);
+  // Patch server node — draw last so it renders on top
+  const SRV_R = 20;
+  ctx.shadowColor = '#5a6fe8'; ctx.shadowBlur = 22;
+  ctx.beginPath(); ctx.arc(PATCH_SERVER.x, PATCH_SERVER.y, SRV_R, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(90,111,232,0.2)'; ctx.fill();
+  ctx.strokeStyle = '#5a6fe8'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.shadowBlur = 0;
+  // Server icon — 3 stacked bars perfectly centered inside circle
+  ctx.fillStyle = '#7a8ff8';
+  const barsH = 12;
+  const barsY = PATCH_SERVER.y - barsH / 2;
+  [0, 5, 10].forEach(dy => {
+    rr(ctx, PATCH_SERVER.x - 8, barsY + dy, 16, 3, 1); ctx.fill();
+  });
+  // Label below node with clear gap
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('PATCH SERVER', PATCH_SERVER.x, PATCH_SERVER.y + SRV_R + 13);
 
-  const done = PATCH_TARGETS.filter(n => p >= n.delay + 0.14).length;
-  const pct = Math.round((done / total) * 100);
-  const bx = W / 2 - 118, by = H - 56;
-  ctx.fillStyle = 'rgba(8,9,16,0.9)';
-  rr(ctx, bx, by, 236, 44, 8); ctx.fill();
-  ctx.strokeStyle = 'rgba(90,111,232,0.25)'; ctx.lineWidth = 1; ctx.stroke();
-  ctx.fillStyle = 'rgba(255,255,255,0.06)';
-  rr(ctx, bx + 12, by + 28, 212, 6, 3); ctx.fill();
-  const barW = 212 * (done / total);
-  if (barW > 0) {
-    const bGrd = ctx.createLinearGradient(bx + 12, 0, bx + 12 + 212, 0);
-    bGrd.addColorStop(0, '#5a6fe8'); bGrd.addColorStop(1, '#3ec9a7');
-    ctx.fillStyle = bGrd;
-    rr(ctx, bx + 12, by + 28, barW, 6, 3); ctx.fill();
-    ctx.shadowColor = '#5a6fe8'; ctx.shadowBlur = 6;
-    ctx.beginPath(); ctx.arc(bx + 12 + barW, by + 31, 3, 0, Math.PI * 2);
-    ctx.fillStyle = '#7a8ff8'; ctx.fill(); ctx.shadowBlur = 0;
-  }
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 13px Space Grotesk, sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText(`${done}/${total} patched`, bx + 12, by + 20);
-  ctx.fillStyle = done === total ? '#3ec9a7' : '#5a6fe8';
+  // Progress badge — centered, fixed height with proper line spacing
+  const doneCount = PATCH_TARGETS.filter(n => p >= n.delay + 0.13).length;
+  const pct = Math.round((doneCount / total) * 100);
+  const badgeW = 256, badgeH = 48;
+  const bx = (W - badgeW) / 2, by = H - badgeH - 8;
+  ctx.fillStyle = 'rgba(8,9,16,0.92)';
+  rr(ctx, bx, by, badgeW, badgeH, 8); ctx.fill();
+  ctx.strokeStyle = 'rgba(90,111,232,0.4)'; ctx.lineWidth = 1; ctx.stroke();
+
+  // Label row
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 14px Space Grotesk, sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(`${doneCount}/${total} patched`, bx + 16, by + 16);
+  ctx.fillStyle = doneCount === total ? '#3ec9a7' : '#7a8ff8';
+  ctx.font = 'bold 14px Space Grotesk, sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText(`${pct}%`, bx + 224, by + 20);
+  ctx.fillText(`${pct}%`, bx + badgeW - 16, by + 16);
+  ctx.textBaseline = 'alphabetic';
+
+  // Progress bar track
+  const trackX = bx + 16, trackY = by + 30, trackW = badgeW - 32, trackH = 7;
+  ctx.fillStyle = 'rgba(255,255,255,0.07)';
+  rr(ctx, trackX, trackY, trackW, trackH, 3); ctx.fill();
+  const barW = trackW * (doneCount / total);
+  if (barW > 0) {
+    const bGrd = ctx.createLinearGradient(trackX, 0, trackX + trackW, 0);
+    bGrd.addColorStop(0, '#5a6fe8'); bGrd.addColorStop(1, '#3ec9a7');
+    ctx.shadowColor = '#5a6fe8'; ctx.shadowBlur = 8;
+    ctx.fillStyle = bGrd;
+    rr(ctx, trackX, trackY, barW, trackH, 3); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = '#7a8ff8'; ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.arc(trackX + barW, trackY + trackH / 2, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff'; ctx.fill(); ctx.shadowBlur = 0;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════
    PHASE 3  —  Continuous Compliance
+   Live compliance score ring + framework cards + audit stream
    ══════════════════════════════════════════════════════════ */
-const FRAMEWORKS = [
-  { label: 'IEC 62443',   target: 0.97, color: '#3ec9a7', delay: 0.1 },
-  { label: 'NERC CIP',    target: 0.91, color: '#5a6fe8', delay: 0.25 },
-  { label: 'NIS2',        target: 0.88, color: '#0fd4c4', delay: 0.4  },
-  { label: 'NIST 800-82', target: 0.94, color: '#b06dd0', delay: 0.55 },
+const COMP_FRAMEWORKS = [
+  { label: 'IEC 62443',   short: '62443', score: 0.97, color: '#3ec9a7', delay: 0.10 },
+  { label: 'NERC CIP',    short: 'NERC',  score: 0.91, color: '#5a6fe8', delay: 0.22 },
+  { label: 'NIS2',        short: 'NIS2',  score: 0.88, color: '#0fd4c4', delay: 0.34 },
+  { label: 'NIST 800-82', short: 'NIST',  score: 0.94, color: '#b06dd0', delay: 0.46 },
 ];
-const LOG_LINES = [
-  { threshold: 0.08,  text: 'PATCH CVE-2024-1337 → APPLIED',     color: '#3ec9a7' },
-  { threshold: 0.22,  text: 'APPROVAL: ops-lead@flowfort.io',     color: '#5a6fe8' },
-  { threshold: 0.38,  text: 'IEC 62443-2-3 §6.2 → SATISFIED',    color: '#3ec9a7' },
-  { threshold: 0.52,  text: 'EVIDENCE PACKAGE GENERATED',         color: '#0fd4c4' },
-  { threshold: 0.65,  text: 'NERC CIP-007-6 R2 → COMPLIANT',     color: '#3ec9a7' },
-  { threshold: 0.78,  text: 'AUDIT TRAIL SEALED (SHA-256)',        color: '#b06dd0' },
-  { threshold: 0.9,   text: 'REPORT EXPORTED → ISO PDF',          color: '#5a6fe8' },
+
+const AUDIT_EVENTS = [
+  { at: 0.08,  icon: '✦', text: 'CVE-2024-1337 patch applied',      color: '#3ec9a7' },
+  { at: 0.20,  icon: '◈', text: 'Approval: ops-lead@flowfort.io',   color: '#5a6fe8' },
+  { at: 0.33,  icon: '✦', text: 'IEC 62443-2-3 §6.2 satisfied',     color: '#3ec9a7' },
+  { at: 0.47,  icon: '◈', text: 'Evidence package generated',        color: '#0fd4c4' },
+  { at: 0.60,  icon: '✦', text: 'NERC CIP-007-6 R2 compliant',      color: '#3ec9a7' },
+  { at: 0.73,  icon: '⬡', text: 'Audit trail sealed · SHA-256',      color: '#b06dd0' },
+  { at: 0.86,  icon: '◈', text: 'Report exported → ISO PDF',         color: '#5a6fe8' },
 ];
 
 function drawCompliance(ctx, W, H, p, t) {
   ctx.clearRect(0, 0, W, H);
-  const shP = Math.min(1, p * 2.2);
-  const cx = W / 2, cy = 100;
-  if (shP > 0.4) {
-    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 65);
-    glow.addColorStop(0, `rgba(62,201,167,${(shP - 0.4) * 0.1})`);
-    glow.addColorStop(1, 'transparent');
-    ctx.fillStyle = glow;
-    ctx.fillRect(cx - 75, cy - 75, 150, 150);
-  }
-  ctx.save();
-  ctx.translate(cx, cy - 18);
-  const s = shP;
-  ctx.beginPath();
-  ctx.moveTo(0, -44 * s);
-  ctx.lineTo(-34 * s, -24 * s); ctx.lineTo(-34 * s, 12 * s);
-  ctx.quadraticCurveTo(-34 * s, 36 * s, 0, 50 * s);
-  ctx.quadraticCurveTo(34 * s, 36 * s, 34 * s, 12 * s);
-  ctx.lineTo(34 * s, -24 * s);
-  ctx.closePath();
-  ctx.fillStyle = `rgba(62,201,167,${s * 0.09})`; ctx.fill();
-  ctx.strokeStyle = `rgba(62,201,167,${s * 0.85})`; ctx.lineWidth = 1.5; ctx.stroke();
-  if (shP > 0.75) {
-    const ck = (shP - 0.75) / 0.25;
-    ctx.beginPath();
-    ctx.moveTo(-14 * ck, 5); ctx.lineTo(-3 * ck, 17 * ck); ctx.lineTo(19 * ck, -11 * ck);
-    ctx.strokeStyle = `rgba(62,201,167,${ck})`; ctx.lineWidth = 3;
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
-  }
-  ctx.restore();
 
-  const barStartY = 202;
-  FRAMEWORKS.forEach((fw, i) => {
-    const barP = band(p, fw.delay, fw.delay + 0.3);
-    const barW = 256 * barP * fw.target;
-    const by = barStartY + i * 44;
-    ctx.fillStyle = 'rgba(255,255,255,0.05)';
-    rr(ctx, W / 2 - 128, by + 16, 256, 5, 2); ctx.fill();
-    if (barW > 2) {
-      const bGrd = ctx.createLinearGradient(W / 2 - 128, 0, W / 2 + 128, 0);
-      bGrd.addColorStop(0, fw.color); bGrd.addColorStop(1, fw.color + '88');
-      ctx.fillStyle = bGrd;
-      rr(ctx, W / 2 - 128, by + 16, barW, 5, 2); ctx.fill();
-      ctx.shadowColor = fw.color; ctx.shadowBlur = 5;
-      ctx.beginPath(); ctx.arc(W / 2 - 128 + barW, by + 18.5, 3, 0, Math.PI * 2);
-      ctx.fillStyle = fw.color; ctx.fill(); ctx.shadowBlur = 0;
-    }
-    ctx.fillStyle = 'rgba(245,245,247,0.82)';
-    ctx.font = '600 10px Plus Jakarta Sans, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(fw.label, W / 2 - 128, by + 12);
-    if (barP > 0.05) {
-      ctx.fillStyle = fw.color;
-      ctx.font = 'bold 10px Space Grotesk, sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillText(`${Math.round(fw.target * barP * 100)}%`, W / 2 + 128, by + 12);
-    }
+  /* ── 1. Central score ring ──────────────────────────────── */
+  const cx = W / 2, cy = 106;   // ring center — leaves room below for cards
+  const R = 54, rInner = 40;
+  const overallScore = 0.925;
+  const ringP = Math.min(1, p * 1.6);
+  const filled = overallScore * ringP;
+
+  // Ambient glow behind ring
+  if (ringP > 0.2) {
+    const halo = ctx.createRadialGradient(cx, cy, rInner * 0.5, cx, cy, R + 28);
+    halo.addColorStop(0, `rgba(62,201,167,${(ringP - 0.2) * 0.18})`);
+    halo.addColorStop(1, 'transparent');
+    ctx.fillStyle = halo; ctx.fillRect(cx - R - 32, cy - R - 32, (R + 32) * 2, (R + 32) * 2);
+  }
+
+  // Tick marks (draw before ring so ring overlays)
+  for (let i = 0; i < 36; i++) {
+    const angle = (i / 36) * Math.PI * 2 - Math.PI / 2;
+    const isMajor = i % 9 === 0;
+    const ro = R + 6, ri = R + (isMajor ? 12 : 8);
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(angle) * ro, cy + Math.sin(angle) * ro);
+    ctx.lineTo(cx + Math.cos(angle) * ri, cy + Math.sin(angle) * ri);
+    ctx.strokeStyle = isMajor ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = isMajor ? 1.5 : 0.8; ctx.stroke();
+  }
+
+  // Track ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 10; ctx.stroke();
+
+  // Filled arc
+  if (filled > 0.005) {
+    const arcEnd = -Math.PI / 2 + Math.PI * 2 * filled;
+    ctx.shadowColor = '#3ec9a7'; ctx.shadowBlur = 18;
+    ctx.beginPath(); ctx.arc(cx, cy, R, -Math.PI / 2, arcEnd);
+    ctx.strokeStyle = '#3ec9a7'; ctx.lineWidth = 10; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.shadowBlur = 0; ctx.lineCap = 'butt';
+    // Leading dot
+    const dx = cx + Math.cos(arcEnd) * R, dy = cy + Math.sin(arcEnd) * R;
+    ctx.shadowColor = '#3ec9a7'; ctx.shadowBlur = 20;
+    ctx.beginPath(); ctx.arc(dx, dy, 7, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff'; ctx.fill(); ctx.shadowBlur = 0;
+  }
+
+  // Inner fill
+  ctx.beginPath(); ctx.arc(cx, cy, rInner, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(10,14,22,0.9)'; ctx.fill();
+
+  // Score % — vertically centered in inner circle
+  const scoreDisplay = Math.round(overallScore * ringP * 100);
+  ctx.shadowColor = '#3ec9a7'; ctx.shadowBlur = ringP > 0.5 ? 16 : 0;
+  ctx.fillStyle = ringP > 0.1 ? '#3ec9a7' : 'rgba(62,201,167,0.3)';
+  ctx.font = 'bold 22px Space Grotesk, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(`${scoreDisplay}%`, cx, cy - 7);
+  ctx.shadowBlur = 0;
+  // Sub-label below score, inside inner circle — 8px for legibility
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.font = '8px JetBrains Mono, monospace';
+  ctx.fillText('COMPLIANCE', cx, cy + 11);
+  ctx.textBaseline = 'alphabetic';
+
+  /* ── 2. Framework cards — 2×2 grid, centered, gap 8px ───── */
+  const cardW = 110, cardH = 52, cardGap = 8;
+  const gridTotalW = cardW * 2 + cardGap;
+  const gridLeft = (W - gridTotalW) / 2;           // perfectly centered
+  const gridTop  = cy + R + 18;                     // below ring with breathing room
+  const gridX = [gridLeft, gridLeft + cardW + cardGap];
+  const gridY = [gridTop, gridTop + cardH + cardGap];
+  const positions = [[0,0],[1,0],[0,1],[1,1]];
+
+  COMP_FRAMEWORKS.forEach((fw, i) => {
+    const fp = band(p, fw.delay, fw.delay + 0.22);
+    if (fp <= 0) return;
+    const [col, row] = positions[i];
+    const x = gridX[col], y = gridY[row];
+    const rgb = fw.color.slice(1).match(/../g).map(h => parseInt(h, 16)).join(',');
+
+    // Card bg + border
+    ctx.globalAlpha = fp;
+    ctx.fillStyle = `rgba(${rgb},0.08)`;
+    rr(ctx, x, y, cardW, cardH, 7); ctx.fill();
+    ctx.strokeStyle = `rgba(${rgb},${fp * 0.5})`;
+    ctx.lineWidth = 1; ctx.stroke();
+
+    // Mini arc — left side, centered vertically in card
+    const miniR = 17, miniCx = x + 28, miniCy = y + cardH / 2;
+    // Track
+    ctx.beginPath(); ctx.arc(miniCx, miniCy, miniR, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 4; ctx.stroke();
+    // Fill
+    const miniArc = -Math.PI / 2 + Math.PI * 2 * fw.score * fp;
+    ctx.shadowColor = fw.color; ctx.shadowBlur = 10 * fp;
+    ctx.beginPath(); ctx.arc(miniCx, miniCy, miniR, -Math.PI / 2, miniArc);
+    ctx.strokeStyle = fw.color; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.stroke();
+    ctx.shadowBlur = 0; ctx.lineCap = 'butt';
+    // Score centered inside mini arc
+    ctx.fillStyle = fw.color;
+    ctx.font = 'bold 10px Space Grotesk, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(`${Math.round(fw.score * fp * 100)}`, miniCx, miniCy);
+    ctx.textBaseline = 'alphabetic';
+
+    // Text block — right of mini arc, vertically centered
+    const textX = x + 53;   // arc center(28) + radius(17) + gap(8)
+    // Framework name — 10px bold
+    ctx.fillStyle = 'rgba(245,245,247,0.95)';
+    ctx.font = 'bold 10px Space Grotesk, sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(fw.label, textX, y + cardH / 2 - 9);
+    // Status pill — 8px for legibility
+    const isCompliant = fw.score * fp >= 0.85;
+    ctx.fillStyle = isCompliant ? '#3ec9a7' : '#f0a030';
+    ctx.font = '8px JetBrains Mono, monospace';
+    ctx.fillText(isCompliant ? '● COMPLIANT' : '● IN REVIEW', textX, y + cardH / 2 + 9);
+    ctx.textBaseline = 'alphabetic';
+    ctx.globalAlpha = 1;
   });
 
-  const lx = 20, ly = H - 62;
-  ctx.fillStyle = 'rgba(8,9,16,0.88)';
-  rr(ctx, lx, ly, W - 40, 46, 7); ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1; ctx.stroke();
-  ctx.fillStyle = 'rgba(255,255,255,0.04)';
-  rr(ctx, lx, ly, W - 40, 14, 7); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,0.2)';
-  ctx.font = '6px JetBrains Mono, monospace';
-  ctx.textAlign = 'left';
-  ctx.fillText('AUDIT LOG', lx + 10, ly + 9);
-  const visible = LOG_LINES.filter(l => p >= l.threshold);
-  const last2 = visible.slice(-2);
-  last2.forEach((l, i) => {
-    ctx.fillStyle = i === last2.length - 1 ? l.color : 'rgba(255,255,255,0.3)';
-    ctx.font = '7.5px JetBrains Mono, monospace';
-    ctx.textAlign = 'left';
-    const blink = i === last2.length - 1 && Math.floor(t / 500) % 2 === 0 ? '█' : '';
-    ctx.fillText(`> ${l.text}${blink}`, lx + 10, ly + 26 + i * 13);
+  /* ── 3. Audit event stream — bottom panel ────────────────── */
+  // 3 rows × 16px + header 24px + padding = 82px total
+  const streamH = 82;
+  const streamY = H - streamH - 8;
+  const streamX = 14, streamW = W - 28;
+
+  ctx.fillStyle = 'rgba(6,8,14,0.92)';
+  rr(ctx, streamX, streamY, streamW, streamH, 8); ctx.fill();
+  ctx.strokeStyle = 'rgba(62,201,167,0.2)'; ctx.lineWidth = 1; ctx.stroke();
+
+  // Title bar row
+  const titleY = streamY + 15;
+  ctx.fillStyle = 'rgba(255,255,255,0.32)';
+  ctx.font = '8px JetBrains Mono, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('AUDIT STREAM', streamX + 12, titleY);
+  // Live dot + label
+  const livePulse = Math.sin(t * 0.005) * 0.3 + 0.7;
+  ctx.beginPath(); ctx.arc(streamX + streamW - 30, titleY, 4, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(62,201,167,${livePulse})`; ctx.fill();
+  ctx.fillStyle = 'rgba(62,201,167,0.85)';
+  ctx.font = '8px JetBrains Mono, monospace'; ctx.textAlign = 'right';
+  ctx.fillText('LIVE', streamX + streamW - 12, titleY);
+  ctx.textBaseline = 'alphabetic';
+
+  // Divider
+  ctx.beginPath(); ctx.moveTo(streamX + 8, streamY + 24); ctx.lineTo(streamX + streamW - 8, streamY + 24);
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1; ctx.stroke();
+
+  // Events — 3 rows, 16px row height, starting at streamY + 38
+  const ROW_H = 16;
+  const visible = AUDIT_EVENTS.filter(e => p >= e.at);
+  const last3 = visible.slice(-3);
+  last3.forEach((ev, i) => {
+    const isLast = i === last3.length - 1;
+    const rowMid = streamY + 38 + i * ROW_H;
+    ctx.globalAlpha = isLast ? 1 : 0.3 + i * 0.2;
+
+    // Color dot
+    ctx.shadowColor = isLast ? ev.color : 'transparent';
+    ctx.shadowBlur = isLast ? 6 : 0;
+    ctx.beginPath(); ctx.arc(streamX + 20, rowMid, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = ev.color; ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Event text — 8px for legibility
+    ctx.fillStyle = isLast ? '#f0f0f2' : 'rgba(255,255,255,0.45)';
+    ctx.font = `${isLast ? 'bold ' : ''}8px JetBrains Mono, monospace`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    const blink = isLast && Math.floor(t / 500) % 2 === 0 ? ' ▌' : '';
+    ctx.fillText(`${ev.text}${blink}`, streamX + 32, rowMid);
+
+    // Timestamp — right aligned, 7px
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.font = '7px JetBrains Mono, monospace'; ctx.textAlign = 'right';
+    ctx.fillText(`T+${Math.round(ev.at * 60)}s`, streamX + streamW - 12, rowMid);
+    ctx.textBaseline = 'alphabetic';
+    ctx.globalAlpha = 1;
   });
 }
 

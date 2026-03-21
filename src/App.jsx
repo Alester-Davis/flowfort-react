@@ -70,9 +70,11 @@ export default function App() {
     });
   }, [subscribe]);
 
-  // Scramble effect after loader done
+  // Unlock scroll + scramble after loader done
   useEffect(() => {
-    if (!ready || scrambleFired.current) return;
+    if (!ready) return;
+    document.documentElement.classList.remove('loading');
+    if (scrambleFired.current) return;
     scrambleFired.current = true;
     const timer = setTimeout(() => {
       const el = document.getElementById('scrambleTarget');
@@ -105,7 +107,7 @@ export default function App() {
 
   // 3D card tilt
   const setupCardTilt = useCallback(() => {
-    const cards = document.querySelectorAll('.feature-card, .problem-card, .hw');
+    const cards = document.querySelectorAll('.feature-card, .prob-card, .hw');
     const handlers = [];
 
     cards.forEach((card) => {
@@ -165,9 +167,9 @@ export default function App() {
         <TrustedBy />
         <div className="glow-line" />
         <Problem />
-        <Workflow />
-        <div className="glow-line" />
         <Features />
+        <div className="glow-line" />
+        <Workflow />
         <div className="glow-line" />
         <Scenarios />
         <div className="glow-line" />

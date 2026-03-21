@@ -13,8 +13,8 @@ const cardVariants = {
     y: 0,
     scale: 1,
     transition: {
-      delay: i * 0.15,
-      duration: 0.6,
+      delay: i * 0.07,
+      duration: 0.4,
       ease: [0.22, 1, 0.36, 1],
     },
   }),
@@ -37,8 +37,7 @@ export default function Stats() {
         const delay = i * 200;
         const dur = 2200;
         setTimeout(() => {
-          el.style.transition = 'text-shadow 0.3s ease';
-          el.style.textShadow = '0 0 28px rgba(77,161,138,0.7)';
+          el.classList.add('counting');
           const start = performance.now();
           (function tick(now) {
             const p = Math.min((now - start) / dur, 1);
@@ -47,7 +46,7 @@ export default function Stats() {
             if (p < 1) {
               requestAnimationFrame(tick);
             } else {
-              setTimeout(() => { el.style.textShadow = ''; }, 600);
+              setTimeout(() => { el.classList.remove('counting'); }, 1800);
             }
           })(performance.now());
         }, delay);

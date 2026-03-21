@@ -1,156 +1,119 @@
-import { LayoutGrid, Cpu, ShieldCheck, Activity, BookOpenCheck, ScanSearch, Radar, MapPinned } from 'lucide-react';
+import { LayoutGrid, Cpu, ShieldCheck, Activity, BookOpenCheck, MapPinned, Radar } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const headerVariants = {
-  hidden: { opacity: 0, y: 40 },
+  hidden: { opacity: 0, y: 30 },
   visible: (i) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      delay: i * 0.1,
-      duration: 0.6,
-      ease: [0.22, 1, 0.36, 1],
-    },
+    opacity: 1, y: 0,
+    transition: { delay: i * 0.05, duration: 0.35, ease: [0.22, 1, 0.36, 1] },
   }),
 };
 
 const cardVariants = {
-  hidden: { opacity: 0, y: 50, scale: 0.95 },
+  hidden: { opacity: 0, y: 20 },
   visible: (i) => ({
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      delay: i * 0.1,
-      duration: 0.55,
-      ease: [0.22, 1, 0.36, 1],
-    },
+    opacity: 1, y: 0,
+    transition: { delay: i * 0.06, duration: 0.45, ease: [0.22, 1, 0.36, 1] },
   }),
 };
 
 const features = [
   {
-    icon: <Cpu size={20} />,
-    iconColor: 'icon-cyan',
+    icon: <Cpu size={16} />,
+    bgIcon: <Cpu size={72} />,
     title: 'OT Patch Intelligence',
-    body: 'OEM qualification tracking, configurable priority scoring (Threat Intel × Business Impact × Process Impact × Patch Level × Exposure), multi-step approval workflows, and installation tracking — not just patch distribution.',
+    body: 'OEM qualification tracking, priority scoring, multi-step approval workflows and installation tracking.',
     tag: 'Patch Management',
-    tagColor: 'tag-cyan',
-    metric: '300+ OEM product qualifications tracked',
-    wide: true,
+    accent: '#17EAD9', accentRgb: '23,234,217',
   },
   {
-    icon: <ShieldCheck size={20} />,
-    iconColor: 'icon-cyan',
+    icon: <ShieldCheck size={16} />,
+    bgIcon: <ShieldCheck size={72} />,
     title: 'OEM-Qualified Patches',
-    body: 'Every patch validated by the original equipment manufacturer before deployment. Knowledge Base Verification captures vendor, product, version, OS compatibility, and evidence for every qualified patch.',
+    body: 'Every patch validated by the original equipment manufacturer with full evidence capture before deployment.',
     tag: 'Patch Intelligence',
-    tagColor: 'tag-cyan',
+    accent: '#6078EA', accentRgb: '96,120,234',
   },
   {
-    icon: <Activity size={20} />,
-    iconColor: 'icon-amber',
+    icon: <Activity size={16} />,
+    bgIcon: <Activity size={72} />,
     title: 'Risk Governance',
-    body: 'Editable 5×5 risk matrix, formal treatment strategies (Avoid / Accept / Transfer / Mitigate), named ownership, multi-step approval routing, and kanban-style action tracking — calibrated to your organization\'s risk appetite.',
+    body: 'Editable 5×5 risk matrix, formal treatment strategies, named ownership and multi-step approval routing.',
     tag: 'Risk Management',
-    tagColor: 'tag-amber',
-    metric: 'Formal owner assigned per risk item',
+    accent: '#fab285', accentRgb: '250,178,133',
   },
   {
-    icon: <BookOpenCheck size={20} />,
-    iconColor: 'icon-green',
+    icon: <BookOpenCheck size={16} />,
+    bgIcon: <BookOpenCheck size={72} />,
     title: 'Full Audit Trail',
-    body: 'Every patch, every approval, every exception — automatically logged. Compliance evidence generated as a byproduct of normal operations. Demonstrate IEC 62443, NIS2, and Act 854 compliance in minutes, not weeks.',
-    tag: 'Compliance Reporting',
-    tagColor: 'tag-green',
+    body: 'Every patch, approval and exception automatically logged. IEC 62443, NIS2, Act 854 evidence in minutes.',
+    tag: 'Compliance',
+    accent: '#5ecfa9', accentRgb: '94,207,169',
   },
   {
-    icon: <MapPinned size={20} />,
-    iconColor: 'icon-teal',
-    title: 'Location-Aware Asset Modeling',
-    body: 'CAD-style floor plan editor with IEC 62443 zone and conduit designations, rack diagrams, and dependency maps. Know the building, floor, rack, and safety zone — not just the IP address.',
+    icon: <MapPinned size={16} />,
+    bgIcon: <MapPinned size={72} />,
+    title: 'Location-Aware Assets',
+    body: 'Floor plan editor with IEC 62443 zones, rack diagrams and dependency maps — building to zone hierarchy.',
     tag: 'Physical Context',
-    tagColor: 'tag-teal',
-    metric: 'Building → Floor → Rack → Zone hierarchy',
+    accent: '#C86DD7', accentRgb: '200,109,215',
   },
   {
-    icon: <Radar size={20} />,
-    iconColor: 'icon-red',
+    icon: <Radar size={16} />,
+    bgIcon: <Radar size={72} />,
     title: 'Threat Intelligence',
-    body: 'Real-time OT-specific threat feeds mapped to your asset inventory. Know which CVEs are actively exploited in industrial environments — and which of your assets are exposed.',
+    body: 'Real-time OT threat feeds mapped to your asset inventory — know which CVEs expose your systems.',
     tag: 'Threat Detection',
-    tagColor: 'tag-red',
+    accent: '#ff7a7a', accentRgb: '255,122,122',
   },
 ];
 
 export default function Features() {
   return (
     <section id="features">
-      <div className="section-orb orb-teal" style={{ top: '-80px', left: '-180px' }} />
+
+
+
       <div className="features-header">
-        <motion.div
-          className="section-label"
-          custom={0}
-          variants={headerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
-        >
+        <motion.div className="section-label" custom={0} variants={headerVariants}
+          initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}>
           <LayoutGrid size={12} /> The Platform
         </motion.div>
-        <motion.h2
-          className="section-title split-title"
-          custom={1}
-          variants={headerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
-        >
+        <motion.h2 className="section-title split-title" custom={1} variants={headerVariants}
+          initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}>
           Every layer of OT security,<br /><span className="grad">unified.</span>
         </motion.h2>
-        <motion.p
-          className="section-body"
-          custom={2}
-          variants={headerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
-          style={{ margin: '0 auto' }}
-        >
+        <motion.p className="section-body" custom={2} variants={headerVariants}
+          initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.3 }}
+          style={{ margin: '0 auto' }}>
           FlowFort sits above your detection tools — absorbing their outputs and adding the
           governance layer that turns alerts into defensible decisions.
         </motion.p>
       </div>
-      <div className="features-grid">
+
+      <div className="feat-compact-grid">
         {features.map((f, i) => (
           <motion.div
-            className={`feature-card${f.wide ? ' wide' : ''}`}
             key={i}
+            className="feat-compact-card"
             custom={i}
             variants={cardVariants}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, amount: 0.15 }}
+            viewport={{ once: true, amount: 0.1 }}
+            style={{ '--accent': f.accent, '--accent-rgb': f.accentRgb }}
           >
-            {f.wide ? (
-              <div className="feature-card-inner">
-                <div className={`feature-card-icon ${f.iconColor}`}>{f.icon}</div>
-                <div>
-                  <div className="feature-card-title">{f.title}</div>
-                  <div className="feature-card-body">{f.body}</div>
-                  {f.metric && <div className="feature-card-metric">{f.metric}</div>}
-                  <div className={`feature-card-tag ${f.tagColor}`}>{f.tag}</div>
-                </div>
+            <div className="feat-compact-left" />
+            <div className="feat-compact-inner">
+              <div className="feat-compact-bg-icon">{f.bgIcon}</div>
+              <div className="feat-compact-shimmer" />
+              <div className="feat-compact-head">
+                <span className="feat-compact-icon">{f.icon}</span>
+                <span className="feat-compact-title">{f.title}</span>
               </div>
-            ) : (
-              <>
-                <div className={`feature-card-icon ${f.iconColor}`}>{f.icon}</div>
-                <div className="feature-card-title">{f.title}</div>
-                <div className="feature-card-body">{f.body}</div>
-                {f.metric && <div className="feature-card-metric">{f.metric}</div>}
-                <div className={`feature-card-tag ${f.tagColor}`}>{f.tag}</div>
-              </>
-            )}
+              <p className="feat-compact-body">{f.body}</p>
+              <span className="feat-compact-tag">{f.tag}</span>
+            </div>
           </motion.div>
         ))}
       </div>

@@ -3,20 +3,22 @@ import { motion } from 'framer-motion';
 
 export default function CTA() {
   return (
-    <div id="cta">
+    <div id="cta" style={{ position: 'relative', overflow: 'hidden' }}>
+
+
       <motion.div
         className="cta-card"
         initial={{ opacity: 0, y: 50, scale: 0.96 }}
         whileInView={{ opacity: 1, y: 0, scale: 1 }}
         viewport={{ once: true, amount: 0.25 }}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       >
         <motion.h2
           className="cta-title"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.2, duration: 0.5 }}
+          transition={{ delay: 0.08, duration: 0.5 }}
         >
           Other platforms tell you what&apos;s wrong.<br />
           <span className="grad">FlowFort helps you prove what you did about it.</span>
@@ -26,7 +28,7 @@ export default function CTA() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.3, duration: 0.5 }}
+          transition={{ delay: 0.12, duration: 0.5 }}
         >
           Industrial organizations across Southeast Asia use FlowFort to close the governance
           gap &mdash; automating patch qualification, risk documentation, and compliance evidence
@@ -37,7 +39,7 @@ export default function CTA() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ delay: 0.4, duration: 0.5 }}
+          transition={{ delay: 0.15, duration: 0.5 }}
         >
           <motion.a
             href="#"

@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import LogoFull from './LogoFull';
 
-const NAV_SECTIONS = ['problem', 'workflow', 'features', 'compliance', 'cta', 'contact'];
+const NAV_SECTIONS = ['problem-section', 'workflow', 'features', 'scenarios', 'compliance', 'global-sites', 'cta', 'contact'];
 
 export default function Navbar({ pastHero, scrolled, spacerRef }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -41,7 +41,7 @@ export default function Navbar({ pastHero, scrolled, spacerRef }) {
           const active = NAV_SECTIONS.find(s => sectionMap.get(s)) || '';
           setActiveSection(active);
         },
-        { threshold: 0.25, rootMargin: '-64px 0px -30% 0px' }
+        { threshold: 0, rootMargin: '-64px 0px -50% 0px' }
       );
       obs.observe(el);
       observers.push(obs);
@@ -82,14 +82,15 @@ export default function Navbar({ pastHero, scrolled, spacerRef }) {
           <LogoFull height={30} />
         </a>
         <ul className="nav-links">
-          <li><a href="#problem" className={linkClass('problem')} onClick={handleLinkClick}>The Problem</a></li>
-          <li><a href="#features" className={linkClass('features')} onClick={handleLinkClick}>Platform</a></li>
-          <li><a href="#compliance" className={linkClass('compliance')} onClick={handleLinkClick}>Compliance</a></li>
-          <li><a href="#contact" className={linkClass('contact')} onClick={handleLinkClick}>Contact</a></li>
+          <li><a href="#problem-section" className={linkClass('problem-section')} onClick={handleLinkClick}>The Problem</a></li>
+          <li><a href="#features"        className={linkClass('features')}        onClick={handleLinkClick}>Platform</a></li>
+          <li><a href="#workflow"        className={linkClass('workflow')}        onClick={handleLinkClick}>How It Works</a></li>
+          <li><a href="#scenarios"       className={linkClass('scenarios')}       onClick={handleLinkClick}>Use Cases</a></li>
+          <li><a href="#compliance"      className={linkClass('compliance')}      onClick={handleLinkClick}>Compliance</a></li>
+          <li><a href="#contact"         className={linkClass('contact')}         onClick={handleLinkClick}>Contact</a></li>
         </ul>
         <div className="nav-cta">
-          <a href="#" className="btn btn-ghost">Sign In</a>
-          <a href="#cta" className="btn btn-primary" onClick={handleLinkClick}>Get Started</a>
+          <a href="#cta" className="btn btn-primary" onClick={handleLinkClick}>Request a Demo</a>
         </div>
         <button
           className={`nav-hamburger${menuOpen ? ' open' : ''}`}
@@ -104,14 +105,15 @@ export default function Navbar({ pastHero, scrolled, spacerRef }) {
       <div className={`mobile-menu-overlay${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)} />
       <div className={`mobile-menu${menuOpen ? ' open' : ''}`}>
         <ul>
-          <li><a href="#problem" className={linkClass('problem')} onClick={handleLinkClick}>The Problem</a></li>
-          <li><a href="#features" className={linkClass('features')} onClick={handleLinkClick}>Platform</a></li>
-          <li><a href="#compliance" className={linkClass('compliance')} onClick={handleLinkClick}>Compliance</a></li>
-          <li><a href="#contact" className={linkClass('contact')} onClick={handleLinkClick}>Contact</a></li>
+          <li><a href="#problem-section" className={linkClass('problem-section')} onClick={handleLinkClick}>The Problem</a></li>
+          <li><a href="#features"        className={linkClass('features')}        onClick={handleLinkClick}>Platform</a></li>
+          <li><a href="#workflow"        className={linkClass('workflow')}        onClick={handleLinkClick}>How It Works</a></li>
+          <li><a href="#scenarios"       className={linkClass('scenarios')}       onClick={handleLinkClick}>Use Cases</a></li>
+          <li><a href="#compliance"      className={linkClass('compliance')}      onClick={handleLinkClick}>Compliance</a></li>
+          <li><a href="#contact"         className={linkClass('contact')}         onClick={handleLinkClick}>Contact</a></li>
         </ul>
         <div className="mobile-menu-cta">
-          <a href="#" className="btn btn-ghost" onClick={() => setMenuOpen(false)}>Sign In</a>
-          <a href="#cta" className="btn btn-primary" onClick={handleLinkClick}>Get Started</a>
+          <a href="#cta" className="btn btn-primary" onClick={handleLinkClick}>Request a Demo</a>
         </div>
       </div>
     </>
