@@ -165,20 +165,14 @@ export default function App() {
       <div id="page-body">
         <Stats />
         <TrustedBy />
-        <div className="glow-line" />
         <Problem />
         <Features />
-        <div className="glow-line" />
         <Workflow />
-        <div className="glow-line" />
         <Scenarios />
-        <div className="glow-line" />
         <Compliance />
-        <div className="glow-line" />
         <GlobalSites />
         <CTA />
         <Contact />
-        <div className="glow-line" />
         <Footer />
       </div>
     </>

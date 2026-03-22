@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Mail, Phone, MapPin, MessageSquare } from 'lucide-react';
 import { Send, CheckCircle } from '@mui/icons-material';
-import { motion } from 'framer-motion';
 import {
   ThemeProvider,
   createTheme,
@@ -24,10 +23,6 @@ const INFO = [
   { icon: <Phone size={15} />, label: 'Phone',  value: '+603-2242 4363',            href: 'tel:+60322424363' },
   { icon: <MapPin size={15} />,label: 'Office', value: 'Level 6, Menara TH, Tower 2A\nBangsar South, 59200 Kuala Lumpur', href: null },
 ];
-
-const ease = [0.22, 1, 0.36, 1];
-const stagger = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } };
-const rise    = { hidden: { opacity: 0, y: 22 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease } } };
 
 /* ── MUI dark theme matching the site palette ── */
 const muiTheme = createTheme({
@@ -152,30 +147,24 @@ export default function Contact() {
         <div className="co-inner">
 
           {/* ── LEFT: heading + info ── */}
-          <motion.div
-            className="co-left"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            variants={stagger}
-          >
-            <motion.div className="section-label" variants={rise}>
+          <div className="co-left">
+            <div className="section-label">
               <MessageSquare size={12} /> Contact
-            </motion.div>
+            </div>
 
-            <motion.h2 className="section-title co-title" variants={rise}>
+            <h2 className="section-title co-title">
               Let&apos;s talk about<br />
               <span className="grad">your OT security.</span>
-            </motion.h2>
+            </h2>
 
-            <motion.p className="co-desc" variants={rise}>
+            <p className="co-desc">
               Tell us about your infrastructure and we&apos;ll show you exactly how FlowFort fits — no generic demos, no pressure.
-            </motion.p>
+            </p>
 
             {/* Contact info rows */}
-            <motion.div className="co-info-list" variants={stagger}>
+            <div className="co-info-list">
               {INFO.map((d, i) => (
-                <motion.div className="co-info-row" key={i} variants={rise}>
+                <div className="co-info-row" key={i}>
                   <span className="co-info-icon">{d.icon}</span>
                   <div className="co-info-body">
                     <span className="co-info-label">{d.label}</span>
@@ -184,16 +173,16 @@ export default function Contact() {
                       : <span className="co-info-val" style={{ whiteSpace: 'pre-line' }}>{d.value}</span>
                     }
                   </div>
-                </motion.div>
+                </div>
               ))}
-            </motion.div>
+            </div>
 
             {/* Live badge */}
-            <motion.div className="co-badge" variants={rise}>
+            <div className="co-badge">
               <span className="co-badge-dot" />
               Replies within 24 hours
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
 
           {/* ── RIGHT: form card ── */}
           <div className="co-form-card">

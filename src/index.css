@@ -778,8 +778,6 @@ nav.scrolled::before { opacity: 0; }
 
 /* ─── Stats ───────────────────────────────────────────────── */
 #stats {
-  border-top: 1px solid var(--stroke);
-  border-bottom: 1px solid var(--stroke);
   background: linear-gradient(180deg, rgba(9,10,20,0.98) 0%, var(--bg) 100%);
 }
 .stats-inner {
@@ -829,7 +827,6 @@ nav.scrolled::before { opacity: 0; }
 
 /* ─── Trusted By ──────────────────────────────────────────── */
 #trusted-by {
-  border-bottom: 1px solid var(--stroke);
   background: var(--bg-deep);
   padding: 2rem 0;
   overflow: hidden;
@@ -1765,8 +1762,6 @@ section {
   display: flex;
   flex-direction: column;
   gap: 0;
-  position: sticky;
-  top: 7rem;
 }
 
 /* Override section-title margin for left-aligned use */
@@ -2004,7 +1999,6 @@ section {
 
 /* ─── Footer ──────────────────────────────────────────────── */
 .ft-root {
-  border-top: 1px solid rgba(255,255,255,0.07);
   background: linear-gradient(180deg, transparent 0%, rgba(14,15,26,0.6) 100%);
 }
 .ft-inner {
@@ -2101,8 +2095,9 @@ section {
 /* ── Large desktop ≥ 1400px ── */
 @media (min-width: 1400px) {
   nav { padding: 1rem 3rem; }
+  nav.scrolled { max-width: 1020px; }
   .nav-logo svg { height: 26px; }
-  .nav-links { gap: 1.6rem; }
+  .nav-links { gap: 2rem; }
   .nav-links a { font-size: 0.82rem; }
   .btn { padding: 0.5rem 1.1rem; font-size: 0.78rem; }
   .btn-large { padding: 0.7rem 1.8rem; font-size: 0.88rem; }
